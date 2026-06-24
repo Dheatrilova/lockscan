@@ -351,3 +351,23 @@ function loadDemo() {
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 'Enter') decryptMessage();
 });
+
+// ---- BACA CIPHERTEXT DARI URL OTOMATIS ----
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const cipher = params.get('c');
+  if (!cipher) return;
+
+  // Switch ke tab paste teks
+  switchTab('text');
+
+  // Isi ciphertext otomatis
+  const cipherInput = document.getElementById('cipherInput');
+  if (cipherInput) cipherInput.value = decodeURIComponent(cipher);
+
+  // Fokus ke field key
+  const keyInput = document.getElementById('decryptKeyInput');
+  if (keyInput) setTimeout(() => keyInput.focus(), 300);
+
+  showToast('📲 QR terbaca! Masukkan key untuk decrypt.', 'success', 4000);
+});

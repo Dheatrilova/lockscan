@@ -80,10 +80,14 @@ function generateQR() {
 
     document.getElementById('ciphertextDisplay').textContent = currentCiphertext;
 
+    // Buat link yang berisi ciphertext di URL
+    const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
+    const qrLink = `${baseUrl}/scan.html?c=${encodeURIComponent(currentCiphertext)}`;
+
     const qrDiv = document.getElementById('qrcode');
     qrDiv.innerHTML = '';
     new QRCode(qrDiv, {
-      text: currentCiphertext,
+      text: qrLink,
       width: 160, height: 160,
       colorDark: '#e8f4f0',
       colorLight: '#111827',
