@@ -8,7 +8,6 @@ let cameraAnimFrame = null;
 
 // ---- TABS ----
 function switchTab(tab) {
-  // Stop camera if leaving camera tab
   if (tab !== 'camera') stopCamera();
 
   const id = tab.charAt(0).toUpperCase() + tab.slice(1);
@@ -17,22 +16,38 @@ function switchTab(tab) {
   document.getElementById('tab' + id).classList.add('active');
   document.getElementById('tabContent' + id).classList.add('active');
 
-  // Reset semua state saat pindah tab
   resetAll();
 }
 
 function resetAll() {
   scannedCipher = '';
 
+  // Reset key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) keyInput.value = '';
 
+  // Reset cipher textarea
   const cipherInput = document.getElementById('cipherInput');
   if (cipherInput) cipherInput.value = '';
 
+  // Sembunyikan hasil decrypt paksa
   const decryptOutput = document.getElementById('decryptOutput');
-  if (decryptOutput) decryptOutput.style.display = 'none';
+  if (decryptOutput) {
+    decryptOutput.style.display = 'none';
+    decryptOutput.style.opacity = '0';
+  }
 
+  // Reset result box
+  const resultBox = document.getElementById('resultBox');
+  if (resultBox) resultBox.className = 'result-box';
+
+  const resultLabel = document.getElementById('resultLabel');
+  if (resultLabel) resultLabel.textContent = '';
+
+  const resultText = document.getElementById('resultText');
+  if (resultText) resultText.textContent = '';
+
+  // Reset camera scan result
   const cameraScanResult = document.getElementById('cameraScanResult');
   if (cameraScanResult) cameraScanResult.style.display = 'none';
 
