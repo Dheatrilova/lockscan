@@ -361,9 +361,14 @@ window.addEventListener('DOMContentLoaded', () => {
   // Switch ke tab paste teks
   switchTab('text');
 
-  // Isi ciphertext otomatis - URLSearchParams sudah auto decode
+  // Decode balik karakter yang diganti
+  const cipherDecoded = cipher
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .replace(/\./g, '=');
+
   const cipherInput = document.getElementById('cipherInput');
-  if (cipherInput) cipherInput.value = cipher;
+  if (cipherInput) cipherInput.value = cipherDecoded;
 
   // Fokus ke field key
   const keyInput = document.getElementById('decryptKeyInput');

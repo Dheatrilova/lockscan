@@ -82,7 +82,12 @@ function generateQR() {
 
     // Buat link yang berisi ciphertext di URL
     const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
-    const qrLink = `${baseUrl}/scan.html?c=${encodeURIComponent(currentCiphertext)}`;
+    // Encode aman untuk URL: ganti karakter yang bermasalah
+    const safeCipher = currentCiphertext
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '.');
+    const qrLink = `${baseUrl}/scan.html?c=${safeCipher}`;
 
     const qrDiv = document.getElementById('qrcode');
     qrDiv.innerHTML = '';
