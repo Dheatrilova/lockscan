@@ -209,10 +209,19 @@ function scanCameraFrame() {
 
   if (code && code.data) {
     scannedCipher = code.data;
+
+    // Reset key dan hasil decrypt dulu
+    const keyInput = document.getElementById('decryptKeyInput');
+    if (keyInput) { keyInput.value = ''; keyInput.focus(); }
+    const decryptOutput = document.getElementById('decryptOutput');
+    if (decryptOutput) decryptOutput.style.display = 'none';
+
+    // Tampilkan preview cipher
     document.getElementById('cameraScanResult').style.display = 'flex';
     document.getElementById('cameraCipherPreview').textContent =
       scannedCipher.length > 60 ? scannedCipher.substring(0, 60) + '...' : scannedCipher;
-    showToast('✅ QR Code berhasil discan!', 'success');
+
+    showToast('✅ QR discan! Masukkan key lalu klik Decrypt.', 'success', 4000);
     stopCamera();
     return;
   }
