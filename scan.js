@@ -33,8 +33,7 @@ function resetAll() {
   // Sembunyikan hasil decrypt paksa
   const decryptOutput = document.getElementById('decryptOutput');
   if (decryptOutput) {
-    decryptOutput.style.display = 'none';
-    decryptOutput.style.opacity = '0';
+    decryptOutput.setAttribute('style', 'display:none !important');
   }
 
   // Reset result box
@@ -289,6 +288,7 @@ function decryptMessage() {
   const outputArea = document.getElementById('decryptOutput');
   const resultBox = document.getElementById('resultBox');
 
+  outputArea.removeAttribute('style');
   outputArea.style.display = 'block';
 
   if (result) {
