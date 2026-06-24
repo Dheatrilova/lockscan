@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LockScan — Scan & Decrypt</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-glow g1" style="top:10%;left:70%"></div>
+  <div class="bg-glow g2" style="top:60%;left:20%"></div>
+  <div class="bg-glow g3" style="top:30%;left:40%"></div>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="lock-icon">🔐</span>
+      <span class="brand-name">LockScan</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Generate</a>
+      <a href="scan.html" class="nav-link active">Decrypt</a>
+    </div>
+  </nav>
+
+  <section class="hero hero-small">
+    <h1 class="hero-title" style="font-size: clamp(2rem, 6vw, 4rem);">
+      <span class="line1">Scan.</span>
+      <span class="line2">Unlock.</span>
+      <span class="line3">Baca.</span>
+    </h1>
+  </section>
+
+  <main class="main-content">
+    <div class="card decrypt-card">
+      <div class="card-header">
+        <div class="card-icon">🔍</div>
+        <div>
+          <h2 class="card-title">Scan & Decrypt</h2>
+          <p class="card-subtitle">Upload QR Code, scan kamera, atau paste ciphertext untuk mendekripsi pesan</p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabQR" onclick="switchTab('qr')">
+          📷 Upload QR
+        </button>
+        <button class="tab-btn" id="tabCamera" onclick="switchTab('camera')">
+          🎥 Kamera HP
+        </button>
+        <button class="tab-btn" id="tabText" onclick="switchTab('text')">
+          📄 Paste Teks
+        </button>
+      </div>
+
+      <!-- Tab QR Upload -->
+      <div class="tab-content active" id="tabContentQR">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('qrFileInput').click()">
+          <input type="file" id="qrFileInput" accept="image/*" style="display:none" onchange="handleQRUpload(event)"/>
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Klik untuk upload QR Code</div>
+          <div class="upload-sub">atau drag & drop file gambar di sini</div>
+          <div class="upload-formats">PNG · JPG · GIF · WEBP</div>
+        </div>
+        <div class="qr-preview-wrap" id="qrPreviewWrap" style="display:none">
+          <img id="qrPreviewImg" class="qr-preview-img" alt="QR Preview"/>
+          <button class="remove-btn" onclick="removeQR()">✕ Hapus</button>
+        </div>
+        <div class="scan-result" id="scanResult" style="display:none">
+          <span class="scan-badge">✓ QR Terbaca</span>
+          <span class="scan-cipher-preview" id="scanCipherPreview"></span>
+        </div>
+      </div>
+
+      <!-- Tab Camera -->
+      <div class="tab-content" id="tabContentCamera">
+        <div class="camera-area active" id="cameraArea">
+          <video id="cameraVideo" class="camera-video" playsinline muted></video>
+          <canvas id="cameraCanvas" style="display:none"></canvas>
+          <div class="camera-overlay">
+            <div class="scan-frame">
+              <span class="corner tl"></span>
+              <span class="corner tr"></span>
+              <span class="corner bl"></span>
+              <span class="corner br"></span>
+              <div class="scan-line"></div>
+            </div>
+          </div>
+          <div class="camera-hint">Arahkan QR Code ke dalam kotak</div>
+        </div>
+        <div style="display:flex; gap:0.75rem; margin-top:0.75rem; flex-wrap:wrap;">
+          <button class="btn btn-outline" id="startCameraBtn" onclick="startCamera()" style="flex:1">
+            🎥 Mulai Kamera
+          </button>
+          <button class="btn btn-danger" id="stopCameraBtn" onclick="stopCamera()" style="flex:1; display:none">
+            ⏹ Stop Kamera
+          </button>
+        </div>
+        <div class="scan-result" id="cameraScanResult" style="display:none; margin-top:0.75rem">
+          <span class="scan-badge">✓ QR Terbaca</span>
+          <span class="scan-cipher-preview" id="cameraCipherPreview"></span>
+        </div>
+        <p class="camera-tip">💡 Fitur kamera membutuhkan izin akses dari browser. Pastikan kamu membuka halaman ini via <strong>HTTPS</strong> atau <strong>localhost</strong>.</p>
+      </div>
+
+      <!-- Tab Text -->
+      <div class="tab-content" id="tabContentText">
+        <div class="form-group">
+          <label class="form-label">
+            <span class="label-icon">🔒</span>
+            Ciphertext
+          </label>
+          <textarea id="cipherInput" class="form-input textarea" placeholder="Paste ciphertext hasil enkripsi di sini..." rows="5"></textarea>
+        </div>
+      </div>
+
+      <!-- Key Input -->
+      <div class="form-group" style="margin-top:1.5rem">
+        <label class="form-label">
+          <span class="label-icon">🔑</span>
+          Key (Password)
+        </label>
+        <div class="input-wrapper">
+          <input type="password" id="decryptKeyInput" class="form-input" placeholder="Masukkan key yang sama dengan saat enkripsi..."/>
+          <button class="toggle-eye" onclick="togglePassword('decryptKeyInput', this)" title="Lihat/Sembunyikan key">👁</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="decryptMessage()">
+        <span class="btn-icon">🔓</span>
+        Decrypt Pesan
+      </button>
+
+      <!-- Decrypt Output -->
+      <div class="output-area" id="decryptOutput" style="display:none;">
+        <div class="output-divider"><span>— Hasil Dekripsi —</span></div>
+        <div class="result-box" id="resultBox">
+          <div class="result-label" id="resultLabel"></div>
+          <div class="result-text" id="resultText"></div>
+          <button class="copy-btn" id="copyResultBtn" onclick="copyResult()" style="margin-top:1rem">📋 Salin Pesan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demo Box -->
+    <div class="demo-box">
+      <div class="demo-title">💡 Demo Cepat</div>
+      <p class="demo-text">Belum punya QR? Coba demo ini untuk melihat cara kerja dekripsi.</p>
+      <button class="btn btn-outline" onclick="loadDemo()">
+        🎭 Muat Demo
+      </button>
+    </div>
+
+    <div class="back-link">
+      <a href="index.html" class="btn btn-secondary">
+        ← Kembali ke Generate QR
+      </a>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+  <script src="scan.js"></script>
+</body>
+</html>

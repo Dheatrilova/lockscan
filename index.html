@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LockScan — QR Secure Message</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow g1"></div>
+  <div class="bg-glow g2"></div>
+  <div class="bg-glow g3"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <span class="lock-icon">🔐</span>
+      <span class="brand-name">LockScan</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link active">Generate</a>
+      <a href="scan.html" class="nav-link">Decrypt</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-label">🔐 Kriptografi Modern</div>
+    <h1 class="hero-title">
+      <span class="line1">Enkripsi.</span>
+      <span class="line2">QR Code.</span>
+      <span class="line3">Aman.</span>
+    </h1>
+    <p class="hero-sub">Lindungi pesanmu dengan enkripsi AES, lalu bagikan sebagai QR Code yang hanya bisa dibaca oleh orang yang punya key.</p>
+    <div class="hero-scroll">↓ mulai</div>
+  </section>
+
+  <!-- Generator Card -->
+  <main class="main-content">
+    <div class="card generate-card">
+      <div class="card-header">
+        <div class="card-icon">✉️</div>
+        <div>
+          <h2 class="card-title">Generate QR Code</h2>
+          <p class="card-subtitle">Enkripsi pesan kamu lalu jadikan QR Code</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">📝</span>
+          Pesan Rahasia
+        </label>
+        <textarea id="messageInput" class="form-input textarea" placeholder="Ketik pesan rahasia kamu di sini..." rows="4"></textarea>
+        <div class="char-count"><span id="charCount">0</span> karakter</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">🔑</span>
+          Key (Password)
+        </label>
+        <div class="input-wrapper">
+          <input type="password" id="keyInput" class="form-input" placeholder="Masukkan key rahasia..." />
+          <button class="toggle-eye" onclick="togglePassword('keyInput', this)" title="Lihat/Sembunyikan key">👁</button>
+        </div>
+        <div class="key-strength-bar">
+          <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <div class="strength-label" id="strengthLabel">Masukkan key...</div>
+      </div>
+
+      <button class="btn btn-primary" id="generateBtn" onclick="generateQR()">
+        <span class="btn-icon">⚡</span>
+        Generate QR Code
+        <span class="btn-ripple"></span>
+      </button>
+
+      <!-- Output -->
+      <div class="output-area" id="outputArea" style="display:none;">
+        <div class="output-divider">
+          <span>— Hasil —</span>
+        </div>
+
+        <div class="output-grid">
+          <div class="ciphertext-box">
+            <div class="output-label">
+              <span>🔒 Ciphertext</span>
+              <button class="copy-btn" onclick="copyCipher()">📋 Salin</button>
+            </div>
+            <div class="ciphertext-text" id="ciphertextDisplay"></div>
+          </div>
+
+          <div class="qr-box">
+            <div class="output-label">
+              <span>📱 QR Code</span>
+              <button class="copy-btn" onclick="downloadQR()">⬇ Unduh</button>
+            </div>
+            <div class="qr-wrapper">
+              <div id="qrcode"></div>
+              <div class="qr-corners">
+                <span class="corner tl"></span>
+                <span class="corner tr"></span>
+                <span class="corner bl"></span>
+                <span class="corner br"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-hint">
+          <span>💡 Bagikan QR ini ke penerima. Mereka butuh key yang sama untuk membacanya.</span>
+        </div>
+
+        <a href="scan.html" class="btn btn-secondary">
+          <span class="btn-icon">🔍</span>
+          Pergi ke Halaman Decrypt →
+        </a>
+      </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="how-section">
+      <h3 class="how-title">Bagaimana cara kerjanya?</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-icon">✍️</div>
+          <h4>Tulis Pesan</h4>
+          <p>Masukkan pesan rahasia dan key (password) yang kamu pilih.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-icon">🔒</div>
+          <h4>Enkripsi AES</h4>
+          <p>Pesan dienkripsi menggunakan AES sehingga menjadi ciphertext acak.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-icon">📱</div>
+          <h4>Jadi QR Code</h4>
+          <p>Ciphertext diubah menjadi QR code yang bisa dibagikan.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div class="step-icon">🔓</div>
+          <h4>Dekripsi</h4>
+          <p>Penerima scan QR + masukkan key → pesan asli terbaca.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team -->
+    <div class="team-section">
+      <h3 class="team-title">👥 Tim Pengembang</h3>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-avatar">PL</div>
+          <div class="team-name">Parida Lubis</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">BA</div>
+          <div class="team-name">Bernita Agustien</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">DT</div>
+          <div class="team-name">Dhea Tri Lova. S</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">JZ</div>
+          <div class="team-name">Jelita Zalukhu</div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar">FH</div>
+          <div class="team-name">Ferlita Hulu</div>
+        </div>
+      </div>
+      <div class="team-info">Proyek Kriptografi — Kelompok A1</div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
