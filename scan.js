@@ -5,6 +5,7 @@
 let scannedCipher = '';
 let cameraStream = null;
 let cameraAnimFrame = null;
+let urlCiphertext = '';
 
 // ---- TABS ----
 function switchTab(tab) {
@@ -17,31 +18,20 @@ function switchTab(tab) {
   document.getElementById('tabContent' + id).classList.add('active');
 
   resetAll();
-
-  // Kalau ada ciphertext dari URL, isi ulang setelah reset
-  if (urlCiphertext) {
-    scannedCipher = urlCiphertext;
-    const cipherInput = document.getElementById('cipherInput');
-    if (cipherInput) cipherInput.value = urlCiphertext;
-  }
 }
 
 function resetAll() {
-  scannedCipher = urlCiphertext || '';
+  scannedCipher = '';
 
-  // Reset key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) keyInput.value = '';
 
-  // Reset cipher textarea — isi ulang dari URL kalau ada
   const cipherInput = document.getElementById('cipherInput');
-  if (cipherInput) cipherInput.value = urlCiphertext || '';
+  if (cipherInput) cipherInput.value = '';
 
-  // Sembunyikan hasil decrypt
   const decryptOutput = document.getElementById('decryptOutput');
   if (decryptOutput) decryptOutput.setAttribute('style', 'display:none !important');
 
-  // Reset result box
   const resultBox = document.getElementById('resultBox');
   if (resultBox) resultBox.className = 'result-box';
   const resultLabel = document.getElementById('resultLabel');
@@ -49,17 +39,15 @@ function resetAll() {
   const resultText = document.getElementById('resultText');
   if (resultText) resultText.textContent = '';
 
-  // Reset camera scan result
   const cameraScanResult = document.getElementById('cameraScanResult');
   if (cameraScanResult) cameraScanResult.style.display = 'none';
 
-  // Reset upload area
   const qrPreviewWrap = document.getElementById('qrPreviewWrap');
   const uploadZone = document.getElementById('uploadZone');
   const scanResult = document.getElementById('scanResult');
   const qrFileInput = document.getElementById('qrFileInput');
   if (qrPreviewWrap) qrPreviewWrap.style.display = 'none';
-  if (uploadZone) uploadZone.style.display = 'block';
+  if (uploadZone) { uploadZone.style.display = 'block'; uploadZone.style.borderColor = ''; uploadZone.style.background = ''; }
   if (scanResult) scanResult.style.display = 'none';
   if (qrFileInput) qrFileInput.value = '';
 }
@@ -87,18 +75,11 @@ function handleQRUpload(event) {
 
       if (code) {
         let cipher = code.data;
-
-        // Cek apakah QR berisi link (mengandung ?c=)
         if (cipher.includes('?c=')) {
           const urlParams = new URLSearchParams(cipher.split('?')[1]);
           const c = urlParams.get('c');
-          if (c) {
-            cipher = atob(
-              c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
-            );
-          }
+          if (c) cipher = atob(c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '='));
         }
-
         scannedCipher = cipher;
         document.getElementById('qrPreviewImg').src = e.target.result;
         document.getElementById('qrPreviewWrap').style.display = 'block';
@@ -157,31 +138,23 @@ async function startCamera() {
   }
 
   try {
-    // Stop existing stream first
     if (cameraStream) stopCamera();
-
-    // Try rear camera first, fallback to any available camera
     try {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } }
-      });
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
     } catch {
       cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
     }
 
-    // Reset video element completely
     video.srcObject = null;
     await new Promise(r => setTimeout(r, 100));
     video.srcObject = cameraStream;
 
-    // Wait for video to be ready (with timeout fallback)
     await new Promise((resolve) => {
       const timeout = setTimeout(resolve, 3000);
       video.oncanplay = () => { clearTimeout(timeout); resolve(); };
       video.onloadedmetadata = () => video.play().catch(() => {});
     });
 
-    // Try playing if not already playing
     if (video.paused) {
       try { await video.play(); } catch(e) { console.warn('play() warning:', e); }
     }
@@ -189,8 +162,6 @@ async function startCamera() {
     startBtn.style.display = 'none';
     stopBtn.style.display = 'flex';
     showToast('🎥 Kamera aktif — arahkan ke QR Code', 'success');
-
-    // Small delay to ensure first frame is rendered
     setTimeout(() => scanCameraFrame(), 300);
 
   } catch (err) {
@@ -208,58 +179,33 @@ async function startCamera() {
 function scanCameraFrame() {
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('cameraCanvas');
-
-  // Stop if camera was turned off
   if (!cameraStream) return;
-
-  // Make sure video is actually playing and has real dimensions
-  if (
-    !video ||
-    video.paused ||
-    video.ended ||
-    video.readyState < 2 ||
-    video.videoWidth === 0 ||
-    video.videoHeight === 0
-  ) {
+  if (!video || video.paused || video.ended || video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) {
     cameraAnimFrame = requestAnimationFrame(scanCameraFrame);
     return;
   }
 
-  // Draw current frame to hidden canvas
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  // Try to decode QR
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(imageData.data, canvas.width, canvas.height, {
-    inversionAttempts: 'attemptBoth'
-  });
+  const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
 
   if (code && code.data) {
     let cipher = code.data;
-
-    // Cek apakah QR berisi link (mengandung ?c=)
     if (cipher.includes('?c=')) {
       const urlParams = new URLSearchParams(cipher.split('?')[1]);
       const c = urlParams.get('c');
-      if (c) {
-        cipher = atob(
-          c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
-        );
-      }
+      if (c) cipher = atob(c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '='));
     }
-
     scannedCipher = cipher;
 
-    // Reset key dan hasil decrypt dulu
     const keyInput = document.getElementById('decryptKeyInput');
     if (keyInput) { keyInput.value = ''; keyInput.focus(); }
     const decryptOutput = document.getElementById('decryptOutput');
     if (decryptOutput) decryptOutput.style.display = 'none';
 
-    // Tampilkan preview cipher
     document.getElementById('cameraScanResult').style.display = 'flex';
     document.getElementById('cameraCipherPreview').textContent =
       scannedCipher.length > 60 ? scannedCipher.substring(0, 60) + '...' : scannedCipher;
@@ -268,8 +214,6 @@ function scanCameraFrame() {
     stopCamera();
     return;
   }
-
-  // Continue scanning
   cameraAnimFrame = requestAnimationFrame(scanCameraFrame);
 }
 
@@ -284,14 +228,12 @@ function stopCamera() {
   }
   const video = document.getElementById('cameraVideo');
   if (video) video.srcObject = null;
-
   const startBtn = document.getElementById('startCameraBtn');
   const stopBtn = document.getElementById('stopCameraBtn');
   if (startBtn) startBtn.style.display = 'flex';
   if (stopBtn) stopBtn.style.display = 'none';
 }
 
-// Stop camera when leaving the page
 window.addEventListener('beforeunload', stopCamera);
 
 // ---- DECRYPT ----
@@ -382,34 +324,34 @@ document.addEventListener('keydown', e => {
 });
 
 // ---- BACA CIPHERTEXT DARI URL OTOMATIS ----
-let urlCiphertext = ''; // simpan ciphertext dari URL
-
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const cipher = params.get('c');
   if (!cipher) return;
 
   // Decode ciphertext dari URL
-  urlCiphertext = atob(
-    cipher
-      .replace(/-/g, '+')
-      .replace(/_/g, '/')
-      .replace(/\./g, '=')
+  const decoded = atob(
+    cipher.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
   );
 
-  // Langsung ke tab Paste Teks karena ciphertext sudah ada dari URL
-  switchTab('text');
+  // Set scannedCipher dulu
+  scannedCipher = decoded;
 
-  // Isi ciphertext (setelah switchTab supaya tidak ke-reset)
+  // Pindah ke tab Paste Teks
+  const textTab = document.getElementById('tabText');
+  const textContent = document.getElementById('tabContentText');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (textTab) textTab.classList.add('active');
+  if (textContent) textContent.classList.add('active');
+
+  // Isi ciphertext
   const cipherInput = document.getElementById('cipherInput');
-  if (cipherInput) cipherInput.value = urlCiphertext;
-
-  // Juga set scannedCipher supaya tab upload & kamera juga bisa decrypt
-  scannedCipher = urlCiphertext;
+  if (cipherInput) cipherInput.value = decoded;
 
   // Fokus ke field key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) setTimeout(() => keyInput.focus(), 300);
 
-  showToast('📲 QR terbaca! Pilih tab & masukkan key untuk decrypt.', 'success', 4000);
+  showToast('📲 QR terbaca! Masukkan key untuk decrypt.', 'success', 4000);
 });
