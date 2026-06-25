@@ -17,6 +17,13 @@ function switchTab(tab) {
   document.getElementById('tabContent' + id).classList.add('active');
 
   resetAll();
+
+  // Kalau ada ciphertext dari URL, isi ulang setelah reset
+  if (urlCiphertext) {
+    scannedCipher = urlCiphertext;
+    const cipherInput = document.getElementById('cipherInput');
+    if (cipherInput) cipherInput.value = urlCiphertext;
+  }
 }
 
 function resetAll() {
