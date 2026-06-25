@@ -82,8 +82,8 @@ function generateQR() {
 
     // Buat link yang berisi ciphertext di URL
     const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
-    // Encode aman untuk URL: ganti karakter yang bermasalah
-    const safeCipher = currentCiphertext
+    // Encode pakai btoa lalu buat URL safe
+    const safeCipher = btoa(currentCiphertext)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=/g, '.');

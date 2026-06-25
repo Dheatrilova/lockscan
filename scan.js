@@ -361,11 +361,13 @@ window.addEventListener('DOMContentLoaded', () => {
   // Switch ke tab paste teks
   switchTab('text');
 
-  // Decode balik karakter yang diganti
-  const cipherDecoded = cipher
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-    .replace(/\./g, '=');
+  // Decode balik dari URL safe ke ciphertext asli
+  const cipherDecoded = atob(
+    cipher
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .replace(/\./g, '=')
+  );
 
   const cipherInput = document.getElementById('cipherInput');
   if (cipherInput) cipherInput.value = cipherDecoded;
