@@ -83,7 +83,20 @@ function handleQRUpload(event) {
       const code = jsQR(imageData.data, canvas.width, canvas.height);
 
       if (code) {
-        scannedCipher = code.data;
+        let cipher = code.data;
+
+        // Cek apakah QR berisi link (mengandung ?c=)
+        if (cipher.includes('?c=')) {
+          const urlParams = new URLSearchParams(cipher.split('?')[1]);
+          const c = urlParams.get('c');
+          if (c) {
+            cipher = atob(
+              c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
+            );
+          }
+        }
+
+        scannedCipher = cipher;
         document.getElementById('qrPreviewImg').src = e.target.result;
         document.getElementById('qrPreviewWrap').style.display = 'block';
         document.getElementById('uploadZone').style.display = 'none';
@@ -222,7 +235,20 @@ function scanCameraFrame() {
   });
 
   if (code && code.data) {
-    scannedCipher = code.data;
+    let cipher = code.data;
+
+    // Cek apakah QR berisi link (mengandung ?c=)
+    if (cipher.includes('?c=')) {
+      const urlParams = new URLSearchParams(cipher.split('?')[1]);
+      const c = urlParams.get('c');
+      if (c) {
+        cipher = atob(
+          c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
+        );
+      }
+    }
+
+    scannedCipher = cipher;
 
     // Reset key dan hasil decrypt dulu
     const keyInput = document.getElementById('decryptKeyInput');
