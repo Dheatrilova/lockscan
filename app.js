@@ -89,6 +89,10 @@ function generateQR() {
       .replace(/=/g, '.');
     const qrLink = `${baseUrl}/scan.html?c=${safeCipher}`;
 
+    // Update tombol "Pergi ke Halaman Decrypt" dengan link yang berisi ciphertext
+    const decryptBtn = document.querySelector('.btn-secondary[href]');
+    if (decryptBtn) decryptBtn.href = qrLink;
+
     const qrDiv = document.getElementById('qrcode');
     qrDiv.innerHTML = '';
     new QRCode(qrDiv, {
