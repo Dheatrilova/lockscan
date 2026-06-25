@@ -339,15 +339,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Pindah ke tab Paste Teks — reset dulu semua tab
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => {
-    c.classList.remove('active');
-    c.style.display = 'none';
-  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
   const textTab = document.getElementById('tabText');
   const textContent = document.getElementById('tabContentText');
   if (textTab) textTab.classList.add('active');
-  if (textContent) { textContent.classList.add('active'); textContent.style.display = 'block'; }
+  if (textContent) textContent.classList.add('active');
 
   // Isi ciphertext
   const cipherInput = document.getElementById('cipherInput');
