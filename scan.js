@@ -337,13 +337,17 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set scannedCipher dulu
   scannedCipher = decoded;
 
-  // Pindah ke tab Paste Teks
+  // Pindah ke tab Paste Teks — reset dulu semua tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.remove('active');
+    c.style.display = 'none';
+  });
+
   const textTab = document.getElementById('tabText');
   const textContent = document.getElementById('tabContentText');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   if (textTab) textTab.classList.add('active');
-  if (textContent) textContent.classList.add('active');
+  if (textContent) { textContent.classList.add('active'); textContent.style.display = 'block'; }
 
   // Isi ciphertext
   const cipherInput = document.getElementById('cipherInput');
