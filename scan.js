@@ -20,29 +20,25 @@ function switchTab(tab) {
 }
 
 function resetAll() {
-  scannedCipher = '';
+  scannedCipher = urlCiphertext || '';
 
   // Reset key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) keyInput.value = '';
 
-  // Reset cipher textarea
+  // Reset cipher textarea — isi ulang dari URL kalau ada
   const cipherInput = document.getElementById('cipherInput');
-  if (cipherInput) cipherInput.value = '';
+  if (cipherInput) cipherInput.value = urlCiphertext || '';
 
-  // Sembunyikan hasil decrypt paksa
+  // Sembunyikan hasil decrypt
   const decryptOutput = document.getElementById('decryptOutput');
-  if (decryptOutput) {
-    decryptOutput.setAttribute('style', 'display:none !important');
-  }
+  if (decryptOutput) decryptOutput.setAttribute('style', 'display:none !important');
 
   // Reset result box
   const resultBox = document.getElementById('resultBox');
   if (resultBox) resultBox.className = 'result-box';
-
   const resultLabel = document.getElementById('resultLabel');
   if (resultLabel) resultLabel.textContent = '';
-
   const resultText = document.getElementById('resultText');
   if (resultText) resultText.textContent = '';
 
@@ -379,28 +375,31 @@ document.addEventListener('keydown', e => {
 });
 
 // ---- BACA CIPHERTEXT DARI URL OTOMATIS ----
+let urlCiphertext = ''; // simpan ciphertext dari URL
+
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const cipher = params.get('c');
   if (!cipher) return;
 
-  // Switch ke tab paste teks
-  switchTab('text');
-
-  // Decode balik dari URL safe ke ciphertext asli
-  const cipherDecoded = atob(
+  // Decode ciphertext dari URL
+  urlCiphertext = atob(
     cipher
       .replace(/-/g, '+')
       .replace(/_/g, '/')
       .replace(/\./g, '=')
   );
 
+  // Isi ke tab paste teks tapi TIDAK pindah tab paksa
   const cipherInput = document.getElementById('cipherInput');
-  if (cipherInput) cipherInput.value = cipherDecoded;
+  if (cipherInput) cipherInput.value = urlCiphertext;
+
+  // Juga set scannedCipher supaya tab upload & kamera juga bisa decrypt
+  scannedCipher = urlCiphertext;
 
   // Fokus ke field key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) setTimeout(() => keyInput.focus(), 300);
 
-  showToast('📲 QR terbaca! Masukkan key untuk decrypt.', 'success', 4000);
+  showToast('📲 QR terbaca! Pilih tab & masukkan key untuk decrypt.', 'success', 4000);
 });
