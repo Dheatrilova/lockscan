@@ -390,7 +390,10 @@ window.addEventListener('DOMContentLoaded', () => {
       .replace(/\./g, '=')
   );
 
-  // Isi ke tab paste teks tapi TIDAK pindah tab paksa
+  // Langsung ke tab Paste Teks karena ciphertext sudah ada dari URL
+  switchTab('text');
+
+  // Isi ciphertext (setelah switchTab supaya tidak ke-reset)
   const cipherInput = document.getElementById('cipherInput');
   if (cipherInput) cipherInput.value = urlCiphertext;
 
