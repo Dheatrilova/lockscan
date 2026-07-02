@@ -5,7 +5,24 @@
 let scannedCipher = '';
 let cameraStream = null;
 let cameraAnimFrame = null;
-let urlCiphertext = '';
+
+// Ambil ciphertext dari isi QR / URL yang di-scan.
+// Mendukung 2 bentuk: link penuh "....scan.html?c=XXXX" ATAU ciphertext mentah.
+function extractCipherFromScannedText(raw) {
+  if (raw.includes('?c=')) {
+    const query = raw.split('?')[1];
+    const params = new URLSearchParams(query);
+    const c = params.get('c');
+    if (c) {
+      try {
+        return decodeURIComponent(c);
+      } catch {
+        return c;
+      }
+    }
+  }
+  return raw;
+}
 
 // ---- TABS ----
 function switchTab(tab) {
@@ -65,22 +82,18 @@ function handleQRUpload(event) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
+      // Gambar di-draw di canvas seukuran aslinya (bukan di-downscale) supaya
+      // jsQR punya cukup resolusi buat decode modul-modul QR yang kecil.
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
 
       if (code) {
-        let cipher = code.data;
-        if (cipher.includes('?c=')) {
-          const urlParams = new URLSearchParams(cipher.split('?')[1]);
-          const c = urlParams.get('c');
-          if (c) cipher = atob(c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '='));
-        }
-        scannedCipher = cipher;
+        scannedCipher = extractCipherFromScannedText(code.data);
         document.getElementById('qrPreviewImg').src = e.target.result;
         document.getElementById('qrPreviewWrap').style.display = 'block';
         document.getElementById('uploadZone').style.display = 'none';
@@ -89,7 +102,7 @@ function handleQRUpload(event) {
           scannedCipher.length > 60 ? scannedCipher.substring(0, 60) + '...' : scannedCipher;
         showToast('✅ QR Code berhasil dibaca!', 'success');
       } else {
-        showToast('❗ QR Code tidak terbaca. Coba gambar yang lebih jelas.', 'error');
+        showToast('❗ QR Code tidak terbaca. Coba upload gambar QR asli (jangan hasil screenshot/crop buram).', 'error');
       }
     };
     img.src = e.target.result;
@@ -193,13 +206,7 @@ function scanCameraFrame() {
   const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: 'attemptBoth' });
 
   if (code && code.data) {
-    let cipher = code.data;
-    if (cipher.includes('?c=')) {
-      const urlParams = new URLSearchParams(cipher.split('?')[1]);
-      const c = urlParams.get('c');
-      if (c) cipher = atob(c.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '='));
-    }
-    scannedCipher = cipher;
+    scannedCipher = extractCipherFromScannedText(code.data);
 
     const keyInput = document.getElementById('decryptKeyInput');
     if (keyInput) { keyInput.value = ''; keyInput.focus(); }
@@ -318,26 +325,30 @@ function loadDemo() {
   showToast('🎭 Demo dimuat! Klik Decrypt untuk melihat hasilnya.', 'success', 4000);
 }
 
-// Ctrl+Enter shortcut
+// Ctrl+Enter shortcut (khusus scan.html)
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 'Enter') decryptMessage();
 });
 
 // ---- BACA CIPHERTEXT DARI URL OTOMATIS ----
+// Ini yang bikin alur "scan dari HP" jadi mulus: begitu link QR dibuka
+// (lewat kamera bawaan HP sekalipun, tanpa buka web LockScan dulu),
+// halaman ini otomatis pindah ke tab Paste Teks, isi ciphertext-nya,
+// lalu fokus ke kolom key — tinggal ketik key & klik Decrypt.
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const cipher = params.get('c');
   if (!cipher) return;
 
-  // Decode ciphertext dari URL
-  const decoded = atob(
-    cipher.replace(/-/g, '+').replace(/_/g, '/').replace(/\./g, '=')
-  );
+  let decoded;
+  try {
+    decoded = decodeURIComponent(cipher);
+  } catch {
+    decoded = cipher;
+  }
 
-  // Set scannedCipher dulu
   scannedCipher = decoded;
 
-  // Pindah ke tab Paste Teks — reset dulu semua tab
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
@@ -346,11 +357,9 @@ window.addEventListener('DOMContentLoaded', () => {
   if (textTab) textTab.classList.add('active');
   if (textContent) textContent.classList.add('active');
 
-  // Isi ciphertext
   const cipherInput = document.getElementById('cipherInput');
   if (cipherInput) cipherInput.value = decoded;
 
-  // Fokus ke field key
   const keyInput = document.getElementById('decryptKeyInput');
   if (keyInput) setTimeout(() => keyInput.focus(), 300);
 

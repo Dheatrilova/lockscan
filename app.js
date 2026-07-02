@@ -80,14 +80,14 @@ function generateQR() {
 
     document.getElementById('ciphertextDisplay').textContent = currentCiphertext;
 
-    // Buat link yang berisi ciphertext di URL
-    const baseUrl = window.location.href.replace('index.html', '').replace(/\/$/, '');
-    // Encode pakai btoa lalu buat URL safe
-    const safeCipher = btoa(currentCiphertext)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '.');
-    const qrLink = `${baseUrl}/scan.html?c=${safeCipher}`;
+    // Buat link decrypt. Ciphertext CryptoJS SUDAH berbentuk base64,
+    // jadi cukup encodeURIComponent — TIDAK perlu di-btoa lagi (dulu double-encoded,
+    // bikin payload QR jadi jauh lebih panjang dari perlu = QR makin padat & susah discan).
+    const baseUrl = window.location.href
+      .split('#')[0]
+      .replace(/index\.html.*$/, '')
+      .replace(/\/$/, '');
+    const qrLink = `${baseUrl}/scan.html?c=${encodeURIComponent(currentCiphertext)}`;
 
     // Update tombol "Pergi ke Halaman Decrypt" dengan link yang berisi ciphertext
     const decryptBtn = document.querySelector('.btn-secondary[href]');
@@ -97,9 +97,15 @@ function generateQR() {
     qrDiv.innerHTML = '';
     new QRCode(qrDiv, {
       text: qrLink,
-      width: 160, height: 160,
-      colorDark: '#e8f4f0',
-      colorLight: '#111827',
+      // Dirender lebih besar (300px, bukan 160px) supaya tiap modul QR punya
+      // cukup pixel — ini kunci utama biar tetap bisa dibaca saat di-upload
+      // ulang sebagai file gambar, bukan cuma waktu discan langsung lewat kamera.
+      width: 300, height: 300,
+      // colorDark/colorLight sebelumnya TERTUKAR (modul gelap dikasih warna terang).
+      // Sekarang dibetulkan + kontras dimaksimalkan (nyaris hitam/putih) supaya
+      // paling reliable dibaca kamera & jsQR.
+      colorDark: '#0a0f16',
+      colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M
     });
 
@@ -181,13 +187,12 @@ if (_keyInput) {
   });
 }
 
-// ---- Ctrl+Enter shortcut ----
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.key === 'Enter') {
-    // index.html
-    const genBtn = document.getElementById('generateBtn');
-    if (genBtn) { genBtn.click(); return; }
-    // scan.html
-    decryptMessage && decryptMessage();
-  }
-});
+// ---- Ctrl+Enter shortcut (index.html only — scan.html punya shortcut sendiri di scan.js) ----
+if (!document.getElementById('cipherInput')) {
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'Enter') {
+      const genBtn = document.getElementById('generateBtn');
+      if (genBtn) genBtn.click();
+    }
+  });
+}
