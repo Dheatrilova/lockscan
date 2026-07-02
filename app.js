@@ -143,27 +143,44 @@ function copyCipher() {
 }
 
 // ---- DOWNLOAD QR ----
+// PENTING: QR yang cuma canvas mentah (tanpa "quiet zone" / margin putih di
+// sekelilingnya) sering GAGAL dibaca scanner ketika dibuka dari file gambar,
+// walaupun scan langsung dari layar tetap jalan (karena background halaman
+// yang terang di sekitar QR ikut berfungsi sebagai quiet zone). Makanya di
+// sini kita gambar ulang ke canvas baru yang lebih besar dengan border putih
+// supaya file PNG-nya reliable dibaca walau di-upload ulang.
 function downloadQR() {
   const qrDiv = document.getElementById('qrcode');
   if (!qrDiv) return;
   const canvas = qrDiv.querySelector('canvas');
   const img = qrDiv.querySelector('img');
+  const sourceEl = canvas || img;
 
-  if (canvas) {
-    const link = document.createElement('a');
-    link.download = 'lockscan-qr.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showToast('⬇ QR Code diunduh!', 'success');
-  } else if (img) {
-    const link = document.createElement('a');
-    link.download = 'lockscan-qr.png';
-    link.href = img.src;
-    link.click();
-    showToast('⬇ QR Code diunduh!', 'success');
-  } else {
+  if (!sourceEl) {
     showToast('❗ QR belum dibuat!', 'error');
+    return;
   }
+
+  const srcW = canvas ? canvas.width : img.naturalWidth;
+  const srcH = canvas ? canvas.height : img.naturalHeight;
+  const quietZone = Math.round(Math.max(srcW, srcH) * 0.15); // ~15% margin tiap sisi
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = srcW + quietZone * 2;
+  outCanvas.height = srcH + quietZone * 2;
+  const ctx = outCanvas.getContext('2d');
+
+  // Isi background putih penuh dulu (quiet zone WAJIB putih/terang, bukan
+  // warna tema, supaya kontras maksimal buat scanner)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+  ctx.drawImage(sourceEl, quietZone, quietZone, srcW, srcH);
+
+  const link = document.createElement('a');
+  link.download = 'lockscan-qr.png';
+  link.href = outCanvas.toDataURL('image/png');
+  link.click();
+  showToast('⬇ QR Code diunduh!', 'success');
 }
 
 // ---- CHAR COUNTER (index.html only) ----
