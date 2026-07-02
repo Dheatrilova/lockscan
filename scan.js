@@ -25,14 +25,28 @@ function extractCipherFromScannedText(raw) {
 }
 
 // ---- TABS ----
+// Mapping eksplisit (bukan auto-capitalize) supaya nggak rawan salah ID.
+// Sebelumnya 'qr' -> "Qr" tapi id di HTML adalah "tabQR" (huruf besar semua),
+// jadi getElementById('tabQr') selalu null -> switchTab error -> tab macet.
+const TAB_ID_MAP = {
+  qr: { btn: 'tabQR', content: 'tabContentQR' },
+  camera: { btn: 'tabCamera', content: 'tabContentCamera' },
+  text: { btn: 'tabText', content: 'tabContentText' },
+};
+
 function switchTab(tab) {
   if (tab !== 'camera') stopCamera();
 
-  const id = tab.charAt(0).toUpperCase() + tab.slice(1);
+  const ids = TAB_ID_MAP[tab];
+  if (!ids) { console.error('Unknown tab:', tab); return; }
+
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab' + id).classList.add('active');
-  document.getElementById('tabContent' + id).classList.add('active');
+
+  const btnEl = document.getElementById(ids.btn);
+  const contentEl = document.getElementById(ids.content);
+  if (btnEl) btnEl.classList.add('active');
+  if (contentEl) contentEl.classList.add('active');
 
   resetAll();
 }
